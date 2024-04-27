@@ -115,7 +115,8 @@ class Map:
         return json.dumps([i.as_dict() for i in self.tile_map])
 
     def load(self, txt):
-        self.tile_map = [Voxel(i["pos"], i["voxel_id"]) for i in json.loads(txt)]
+        self.tile_map = [Voxel(tuple(i["pos"]), i["voxel_id"]) for i in json.loads(txt)]
+        print([i.pos for i in self.tile_map])
     
         
         
@@ -289,7 +290,6 @@ def console(scene):
                 print("no specified file")
             else:
                 filename = inp.split(" ")[1]
-                print(os.listdir("Levels"))
                 if filename in os.listdir("Levels"):
                     with open("Levels/"+filename, "r") as fil:
                         txt = fil.read()
@@ -303,7 +303,6 @@ def console(scene):
             else:
                 filename = inp.split(" ")[1]
                 saves = os.listdir("Levels")
-                print(saves)
                 if filename in saves:
                     if input("file already exist. Do you want to replace it (y, n) ") == "y":
                         with open("Levels/"+filename, "w") as fil:
