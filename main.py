@@ -1,6 +1,7 @@
 import pygame
 import math
 from math import cos, sin, pi
+from itertools import product
 
 
 tile = 30
@@ -10,7 +11,7 @@ HIGHTTILES = 28
 SCREEN_WIDTH = tile * WIDTHTILES
 SCREEN_HIGHT = tile * HIGHTTILES
 
-window = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HIGHT))
+window = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HIGHT), pygame.DOUBLEBUF, 32)
 
 
 TILE_FILENAMES = [
@@ -42,15 +43,18 @@ TILE_FILENAMES = [
     "Art/iso_leafleafyellowyellow.png",  
     "Art/iso_mossmoss.png",              
     "Art/iso_redstoneredstonemossmoss.png",
-    "Art/iso_redstoneredstone.png",      
+    "Art/iso_redstoneredstone.png",
+    "Art/iso_redstoneredstoneslabslab.png",      
     "Art/iso_sandsand.png",              
     "Art/iso_shadowsshadow.png",         
     "Art/iso_snowsnow.png",              
     "Art/iso_stonestone_emptyempty.png", 
     "Art/iso_stonestone.png",            
-    "Art/iso_waterwater.png",            
+    "Art/iso_waterwater.png",
+    "Art/iso_waterwater_fullfull.png",            
     "Art/iso_woodwoodplanksplanks.png",  
-    "Art/iso_woodwood.png"]              
+    "Art/iso_woodwood.png"]
+
 
 
 TILE_TEXTURES = [pygame.transform.scale(pygame.image.load(i), (tile, tile))
@@ -130,22 +134,58 @@ class Map:
 
 CURSOR_TEXTURE = pygame.image.load("Art/curser.png")
 CURSOR_TEXTURE = pygame.transform.scale(CURSOR_TEXTURE, (tile, tile))
+
 class Cursor:
     def __init__(self):
         self.pos = (2,0,2)
         self.selected = 0
+        self.mark = None
+        self.mark2 = None
+        self.copied_region =  []
 
+        
     def change_voxel(self, scene, step = 1):
-        current_voxel = scene.get_tile_by_pos(self.pos)
-        if current_voxel:
-            scene.change_tile_by_pos(self.pos, (current_voxel.voxel_id + step) % (len(TILE_TEXTURES) + 1))
+        if self.mark2:
+            current_voxel = scene.get_tile_by_pos(self.mark2)
         else:
-            scene.change_tile_by_pos(self.pos, step % (len(TILE_TEXTURES) + 1))
+            current_voxel = scene.get_tile_by_pos(self.pos)
+
+
+        for i in self.selected_pos:
+            if current_voxel:
+                scene.change_tile_by_pos(i, (current_voxel.voxel_id + step) % (len(TILE_TEXTURES) + 1))
+            else:
+                scene.change_tile_by_pos(i, step % (len(TILE_TEXTURES) + 1))
         
 
     @property
     def screen_pos(self):
         return (self.pos[0]*tile, self.pos[2]*tile)
+
+    @property
+    def selected_pos(self):
+        if (not self.mark2):
+            return [self.pos]
+
+        return list(product(range(min(self.mark[0], self.mark2[0]),
+                                  min(self.mark[0], self.mark2[0]) +
+                                  abs(self.mark[0] - self.mark2[0]) + 1),
+                            range(min(self.mark[1], self.mark2[1]),
+                                  min(self.mark[1], self.mark2[1]) +
+                                  abs(self.mark[1] - self.mark2[1]) + 1),
+                            range(min(self.mark[2], self.mark2[2]),
+                                  min(self.mark[2], self.mark2[2]) +
+                                  abs(self.mark[2] - self.mark2[2]) + 1)))
+        
+    
+    @property
+    def selected_region_rect(self):
+        if (not self.mark) or (not self.mark2):
+            return None
+        
+        return pygame.Rect(tile*min(self.mark[0], self.mark2[0]), tile*min(self.mark[2], self.mark2[2]),
+                           tile*abs(self.mark[0] - self.mark2[0])+tile, tile*abs(self.mark[2] - self.mark2[2]) + tile)
+        
 
         
 
@@ -153,7 +193,8 @@ def input_handler(events, cursor, scene):
     mouse_pos = pygame.mouse.get_pos()
     cursor.pos = (math.floor(mouse_pos[0] / tile), cursor.pos[1], math.floor( mouse_pos[1] / tile ))
     if pygame.mouse.get_pressed()[0]:
-        scene.change_tile_by_pos(cursor.pos, cursor.selected)
+        for i in cursor.selected_pos:
+            scene.change_tile_by_pos(i, cursor.selected)
         
     for i in events:
         if i.type == pygame.KEYDOWN:
@@ -167,6 +208,22 @@ def input_handler(events, cursor, scene):
                 scene.current_layer -= 1
             if i.key == pygame.K_i:
                 scene.iso_mode = not scene.iso_mode
+            if i.key == pygame.K_m:
+                if cursor.mark:
+                    if cursor.mark2:
+                        cursor.mark  = None
+                        cursor.mark2 = None
+                    else:
+                        cursor.mark2 = cursor.pos
+                else:
+                    cursor.mark = cursor.pos
+            if i.key == pygame.K_c:
+                if cursor.mark2:
+                    cursor.copied_region = [Voxel((i[0] - cursor.mark[0], i[1] - cursor.mark[1], i[2] - cursor.mark[2]), scene.get_tile_by_pos(i).voxel_id)
+                                            for i in cursor.selected_pos if scene.get_tile_by_pos(i)]                    
+            if i.key == pygame.K_v:
+                for j in cursor.copied_region:
+                    scene.change_tile_by_pos((j.pos[0] + cursor.pos[0], j.pos[1] + cursor.pos[1], j.pos[2] + cursor.pos[2]), j.voxel_id)
         if i.type == pygame.MOUSEBUTTONDOWN:
             if i.button == 3: # right click
                 selected_voxel = scene.get_tile_by_pos(cursor.pos)
@@ -188,6 +245,11 @@ def graphics(scene, cursor):
     window.fill((0,0,0))
     scene.update_surface()
     window.blit(scene.surface, (0,0))
+    if cursor.selected_region_rect:
+        sur = pygame.Surface(cursor.selected_region_rect.size)
+        sur.fill((10,10,160))
+        sur.set_alpha(100)
+        window.blit(sur, cursor.selected_region_rect.topleft)
     window.blit(CURSOR_TEXTURE, cursor.screen_pos)
     pygame.display.update()
 
