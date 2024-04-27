@@ -2,6 +2,10 @@ import pygame
 import math
 from math import cos, sin, pi
 from itertools import product
+import json
+from threading import Thread
+import os
+
 
 
 tile = 30
@@ -10,7 +14,7 @@ HIGHTTILES = 28
 
 SCREEN_WIDTH = tile * WIDTHTILES
 SCREEN_HIGHT = tile * HIGHTTILES
-
+pygame.font.init()
 window = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HIGHT), pygame.DOUBLEBUF, 32)
 
 
@@ -88,6 +92,9 @@ class Voxel:
         self.pos      = pos
         self.voxel_id = voxel_id
 
+    def as_dict(self):
+        return {"pos": self.pos, "voxel_id": self.voxel_id}
+        
     @property
     def texture(self):
         return TILE_TEXTURES[self.voxel_id - 1]
@@ -103,6 +110,15 @@ class Map:
         self.current_layer = 0
         self.iso_mode = False
 
+
+    def to_json(self):
+        return json.dumps([i.as_dict() for i in self.tile_map])
+
+    def load(self, txt):
+        self.tile_map = [Voxel(i["pos"], i["voxel_id"]) for i in json.loads(txt)]
+    
+        
+        
     def update_surface(self):
         if not self.iso_mode:
             self.surface.fill((0,0,0))
@@ -180,11 +196,15 @@ class Cursor:
     
     @property
     def selected_region_rect(self):
-        if (not self.mark) or (not self.mark2):
+        if (not self.mark):
             return None
+        if not self.mark2:
+            mark2 = self.pos
+        else:
+            mark2 = self.mark2
         
-        return pygame.Rect(tile*min(self.mark[0], self.mark2[0]), tile*min(self.mark[2], self.mark2[2]),
-                           tile*abs(self.mark[0] - self.mark2[0])+tile, tile*abs(self.mark[2] - self.mark2[2]) + tile)
+        return pygame.Rect(tile*min(self.mark[0], mark2[0]), tile*min(self.mark[2], mark2[2]),
+                           tile*abs(self.mark[0] - mark2[0])+tile, tile*abs(self.mark[2] - mark2[2]) + tile)
         
 
         
@@ -238,7 +258,10 @@ def input_handler(events, cursor, scene):
             if i.button == 5: # down scroll
                 cursor.change_voxel(scene, step = -1)
                 
+
+
                 
+FONT = pygame.font.Font("Art/m3x6.ttf", size = 30)
         
         
 def graphics(scene, cursor):
@@ -250,14 +273,55 @@ def graphics(scene, cursor):
         sur.fill((10,10,160))
         sur.set_alpha(100)
         window.blit(sur, cursor.selected_region_rect.topleft)
+    window.blit(FONT.render(f"Level: {scene.current_layer}", False, (255,255,255)), (0,0))
     window.blit(CURSOR_TEXTURE, cursor.screen_pos)
     pygame.display.update()
 
+
+def console(scene):
+    while True:
+        inp = input("> ")
+        if (inp == "print"):
+            print(scene.to_json())
+
+        if (inp.startswith("load")):
+            if len(inp.split(" ")) < 2:
+                print("no specified file")
+            else:
+                filename = inp.split(" ")[1]
+                print(os.listdir("Levels"))
+                if filename in os.listdir("Levels"):
+                    with open("Levels/"+filename, "r") as fil:
+                        txt = fil.read()
+                    scene.load(txt)
+                else:
+                    print("couldnt find file")
+            
+        if (inp.startswith("save")):            
+            if len(inp.split(" ")) < 2:
+                pass
+            else:
+                filename = inp.split(" ")[1]
+                saves = os.listdir("Levels")
+                print(saves)
+                if filename in saves:
+                    if input("file already exist. Do you want to replace it (y, n) ") == "y":
+                        with open("Levels/"+filename, "w") as fil:
+                            fil.write(scene.to_json())
+                else:
+                    with open("Levels/"+filename, "x") as fil:
+                        fil.write(scene.to_json())
+            #with open(filename, "r") as fil:
+                
+
+    
 def main():
     cursor = Cursor()
     scene  = Map()
     
     framecount = 0
+
+    Thread(target = console, daemon = True, args=[scene]).start()
     
     clock = pygame.time.Clock()
     running = True
