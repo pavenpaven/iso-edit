@@ -4,8 +4,8 @@ from math import cos, sin, pi
 
 
 tile = 30
-WIDTHTILES = 15
-HIGHTTILES = 15
+WIDTHTILES = 28
+HIGHTTILES = 28
 
 SCREEN_WIDTH = tile * WIDTHTILES
 SCREEN_HIGHT = tile * HIGHTTILES
@@ -63,11 +63,11 @@ iso_tile = iso_tile_scale*tile
 ISO_TEXTURES =  [pygame.transform.scale(pygame.image.load(i), (tile*iso_tile_scale, tile*iso_tile_scale))
                      for i in TILE_FILENAMES]
 
-def sigmoid(x): # maybe you can make something cheaper
-    return (math.exp(x)/(math.exp(x) + 1))
+def bounded(x): # maybe you can make something cheaper
+    return ( 1/(1-x) if x < 0 else -1/(1+x) + 2)/2
 
 def convert_to_diagonal_order(l):
-    return sorted(l, key = lambda x: x.pos[1] + sigmoid(x.pos[0] + x.pos[2])) # math magic basicly sigmoid between 0 and 1
+    return sorted(l, key = lambda x: x.pos[1] + bounded(x.pos[0] + x.pos[2])) # math magic basicly sigmoid between 0 and 1
 
 #def convert_to_diagonal_order(l):
 #    return sorted(l, key = lambda x: x.pos[1] + sigmoid(max(x.pos[0], x.pos[2]))) # math magic basicly sigmoid between 0 and 1
@@ -168,7 +168,6 @@ def input_handler(events, cursor, scene):
             if i.key == pygame.K_i:
                 scene.iso_mode = not scene.iso_mode
         if i.type == pygame.MOUSEBUTTONDOWN:
-            print(i.button)
             if i.button == 3: # right click
                 selected_voxel = scene.get_tile_by_pos(cursor.pos)
                 if selected_voxel:
