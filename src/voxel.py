@@ -5,7 +5,7 @@ tile = 30
 
 
 TILE_FILENAMES = [
-    "Art/pixil-frame-0.png",
+    "Art/peacle.png",
     "Art/iso_birchbirch.png",            
     "Art/iso_cobblecobble.png",          
     "Art/iso_cobblecobbleslabslab.png",  
@@ -47,7 +47,10 @@ TILE_FILENAMES = [
     "Art/iso_grassgrassslabslab.png",
     "Art/iso_grassgrassyellowyellowslabslab.png",
     "Art/iso_woodwoodslabslab.png",
-    "Art/iso_sandsandslabslab.png"]
+    "Art/iso_sandsandslabslab.png",
+    "Art/iso_carbord.png",
+    "Art/peacle_heavy.png"]
+
 
 
 TILE_TEXTURES = [animation.Animation.from_file(i, (tile,tile), 4) if len(i.split(".")) > 1

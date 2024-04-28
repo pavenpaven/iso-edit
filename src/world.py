@@ -3,6 +3,7 @@ from math import cos, sin, pi
 import json
 import src.animation as animation
 from src.voxel import Voxel, v3_add, tile, TILE_TEXTURES, ISO_TEXTURES, iso_tile_scale, iso_tile
+import src.actors as actors
 
 
 
@@ -36,10 +37,11 @@ class Map:
 
     def to_json(self):
         return json.dumps({"tile_map": [i.as_dict() for i in self.tile_map],
-                           "actors": []})
+                           "actors": [i.to_dict() for i in self.actors]})
 
     def load(self, txt):
         self.tile_map = [Voxel(tuple(i["pos"]), i["voxel_id"]) for i in json.loads(txt)["tile_map"]]
+        self.actors = [actors.from_dict(i) for i in json.loads(txt)["actors"]]
         print([i.pos for i in self.tile_map])
     
 
@@ -54,7 +56,7 @@ class Map:
             i.update(framecount)
         if not self.iso_mode:
             self.surface.fill(self.BKG_COLOR)
-            for i in self.tile_map:
+            for i in self.tile_map + [i.as_voxel() for i in self.actors if i.as_voxel()]:
                 if i.pos[1] == self.current_layer:
                     self.surface.blit(i.texture, (i.pos[0] * tile, i.pos[2] * tile))
         else:

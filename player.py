@@ -18,27 +18,42 @@ PLAYER_TEXTURE = pygame.image.load("Art/iso_hayhay.png")
 PLAYER_TEXTURE = pygame.transform.scale(PLAYER_TEXTURE, (iso_tile, iso_tile))
 
 class Player(actors.Actor):
+    def __init__(self, pos):
+        self.pos = pos
+        self.carry = False
+    
     def as_voxel(self):
-        vox = world.Voxel(self.pos, voxel_id = 1)
+        if self.carry:
+            vox = world.Voxel(self.pos, voxel_id = 45)
+        else:
+            vox = world.Voxel(self.pos, voxel_id = 1)
         vox.is_player = True
         return vox
 
     def on_push(self, direction, scene, gravity = False):
-        return True
-    
+        return not gravity
 
+    def pull(self, vec, scene):
+        pass
+    
     def walk(self, vec, scene):
         old_pos = self.pos
-        scene.update_actors()
         v = v3_add(self.pos, vec)
-        if not scene.get_tile_by_pos(v):
+        on_head = list(filter(lambda x: x.pos == v3_add(self.pos, (0,1,0)), scene.actors))
+        if not scene.get_tile_by_pos(v):            
             self.pos = v
         elif not scene.get_tile_by_pos(v3_add((0,1,0), v)):
             self.pos = v3_add((0,1,0), v)
+            vec = v3_add((0,1,0), vec)
         for i in scene.actors:
             if i.pos == self.pos:
                 if not i.on_push(vec, scene):
                     self.pos = old_pos
+        
+        if on_head and self.pos != old_pos:
+                on_head[0].pull(vec, scene)
+        self.carry = bool(list(filter(lambda x: x.pos == v3_add(self.pos, (0,1,0)), scene.actors)))
+        scene.update_actors()
                 
        
 #    # def render(self, surface):
@@ -79,7 +94,7 @@ def input_handler(events, player, scene):
 def main():
     scene  = world.Map((SCREEN_WIDTH, SCREEN_HIGHT))
 
-    with open("Levels/forestpath", "r") as fil:
+    with open("Levels/pusseltest", "r") as fil:
         txt = fil.read()
     
     scene.load(txt)
@@ -88,7 +103,7 @@ def main():
 
     jack = Player((5,1,5))
 
-    scene.actors = [jack, Block((3, 3, 3)), Block((4, 3, 3)), Block((5, 3, 3))]
+    scene.actors.append(jack)
     
     framecount = 0
 

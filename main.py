@@ -41,6 +41,21 @@ class Cursor:
                 scene.change_tile_by_pos(i, (current_voxel.voxel_id + step) % (len(TILE_TEXTURES) + 1))
             else:
                 scene.change_tile_by_pos(i, step % (len(TILE_TEXTURES) + 1))
+
+    def toggle_block(self, scene):
+        blocks = [i.pos for i in scene.actors if i.NAME == "Block"]
+        current_state = False
+        if self.pos in blocks:
+            current_state = True
+        if self.mark2 in blocks:
+            current_state = True
+        elif self.mark2:
+            current_state = False
+
+        scene.actors = [i for i in scene.actors if not i.pos in self.selected_pos or not i.NAME == "Block"]
+        if not current_state:
+            scene.actors = scene.actors + [actors.Block(i) for i in self.selected_pos]
+            
         
 
     @property
@@ -89,6 +104,8 @@ def input_handler(events, cursor, scene):
         if i.type == pygame.KEYDOWN:
             if i.key == pygame.K_x:
                 cursor.change_voxel(scene)
+            if i.key == pygame.K_b:
+                cursor.toggle_block(scene)
             if i.key == pygame.K_UP:
                 cursor.pos = (cursor.pos[0], cursor.pos[1] + 1, cursor.pos[2])
                 scene.current_layer += 1
