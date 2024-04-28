@@ -52,6 +52,9 @@ TILE_FILENAMES = [
     "Art/iso_grassgrassyellowyellowslabslab.png",
     "Art/iso_woodwoodslabslab.png"]
 
+def v3_add(v, w):
+    return (v[0] + w[0], v[1] + w[1], v[2] + w[2])
+
 
 TILE_TEXTURES = [animation.Animation.from_file(i, (tile,tile), 4) if len(i.split(".")) > 1
                  else animation.Animation.from_dir(i, (tile, tile), 4)
@@ -113,7 +116,8 @@ class Map:
 
 
     def to_json(self):
-        return json.dumps([i.as_dict() for i in self.tile_map])
+        return json.dumps({"tile_map": [i.as_dict() for i in self.tile_map],
+                           "actors": []})
 
     def load(self, txt):
         self.tile_map = [Voxel(tuple(i["pos"]), i["voxel_id"]) for i in json.loads(txt)]

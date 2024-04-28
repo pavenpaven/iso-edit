@@ -8,6 +8,7 @@ import time
 import datetime
 import src.world as world
 from src.world import Voxel, Map, tile, TILE_TEXTURES
+import src.actors as actors
 
 WIDTHTILES = 28
 HIGHTTILES = 28
