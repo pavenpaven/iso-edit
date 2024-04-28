@@ -1,5 +1,4 @@
-import src.world as world
-from src.world import Voxel, v3_add
+from src.voxel import Voxel, v3_add
 
 class Actor:
     GRAVITY = True
