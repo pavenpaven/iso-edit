@@ -5,7 +5,9 @@ import src.animation as animation
 from src.voxel import Voxel, v3_add, tile, TILE_TEXTURES, ISO_TEXTURES, iso_tile_scale, iso_tile
 import src.actors as actors
 
-
+print("**********************************")
+print("The tile art is entirely made by Dani Maccari. Link to their itch io: https://dani-maccari.itch.io/")
+print("**********************************")
 
 
 def bounded(x): # maybe you can make something cheaper

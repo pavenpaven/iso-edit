@@ -26,12 +26,13 @@ class Actor:
     def step(self, scene):
         if self.GRAVITY:
             newpos = v3_add(self.pos, (0,-1,0))
-            if not scene.get_tile_by_pos(newpos):
-                for i in scene.actors:
-                    if newpos == i.pos:
-                        if not i.on_push((0,-1,0), scene, gravity = True):
-                            return None
-                self.pos = newpos
+            if not scene.get_tile_by_pos(newpos) or (scene.get_tile_by_pos(newpos).voxel_id in [35, 36]):
+#                if not (scene.get_tile_by_pos(newpos).voxel_id in [35, 36]):
+                    for i in scene.actors:
+                        if newpos == i.pos:
+                            if not i.on_push((0,-1,0), scene, gravity = True):
+                                return None
+                    self.pos = newpos
                                 
         
 class Block(Actor):

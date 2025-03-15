@@ -40,7 +40,9 @@ class Player(actors.Actor):
         old_pos = self.pos
         v = v3_add(self.pos, vec)
         on_head = list(filter(lambda x: x.pos == v3_add(self.pos, (0,1,0)), scene.actors))
-        if not scene.get_tile_by_pos(v):            
+        if not scene.get_tile_by_pos(v):
+            self.pos = v
+        elif scene.get_tile_by_pos(v).voxel_id in [35,36]:
             self.pos = v
         elif not scene.get_tile_by_pos(v3_add((0,1,0), v)):
             self.pos = v3_add((0,1,0), v)
